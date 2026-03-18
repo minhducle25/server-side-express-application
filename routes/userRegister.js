@@ -4,7 +4,7 @@ var router = express.Router();
 var bcrypt = require('bcrypt');
 
 /* POST /userRegister */
-router.post('/', function(req, res, next) {
+router.post('/', function (req, res, next) {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -28,16 +28,20 @@ router.post('/', function(req, res, next) {
       const hashedPassword = bcrypt.hashSync(password, 10);
 
       req.db.from('users')
-        .insert({email: email, password: hashedPassword})
+        .insert({ email: email, password: hashedPassword })
         .then(() => {
           return res.status(201).json({
             "message": "User created"
           });
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(500).json({ "error": true, "message": "Error creating user" });
         });
     })
     .catch((err) => {
       console.log(err);
-      res.status(500).json({"Error" : true, "Message" : "Error in MySQL query"});
+      res.status(500).json({ "Error": true, "Message": "Error in MySQL query" });
     });
 });
 

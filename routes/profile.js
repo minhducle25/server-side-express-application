@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const knex = require('knex')(require('../knexfile.js'));
 const moment = require('moment');
 
 // Middleware to verify JWT token
@@ -36,7 +35,7 @@ const validateProfileData = ({ firstName, lastName, dob, address }) => {
 router.get('/user/:email/profile', verifyToken, (req, res) => {
   const email = req.params.email;
   const fields = req.user && req.user.email === email ? ['email', 'firstName', 'lastName', 'dob', 'address'] : ['email', 'firstName', 'lastName'];
-  knex('users').where({ email }).select(fields)
+  req.db('users').where({ email }).select(fields)
     .then(userProfile => {
       if (userProfile.length > 0) {
         const profile = userProfile[0];
@@ -62,10 +61,10 @@ router.put('/user/:email/profile', verifyToken, (req, res) => {
 
   if (req.user.email !== email) return res.status(403).json({ error: true, message: 'Forbidden' });
 
-  knex('users').where({ email }).update({ firstName, lastName, dob, address })
+  req.db('users').where({ email }).update({ firstName, lastName, dob, address })
     .then(count => {
       if (!count) return res.status(404).json({ error: true, message: `Profile with email: ${email} not found.` });
-      return knex('users').where({ email }).select('email', 'firstName', 'lastName', 'dob', 'address');
+      return req.db('users').where({ email }).select('email', 'firstName', 'lastName', 'dob', 'address');
     })
     .then(userProfile => {
       if (userProfile.length > 0) {

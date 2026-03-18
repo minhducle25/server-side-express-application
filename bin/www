@@ -6,7 +6,9 @@
 
 var app = require('../app');
 var debug = require('debug')('volcano-express-application:server');
-var http = require('https');
+var http = require('http');
+var https = require('https');
+var fs = require('fs');
 
 /**
  * Get port from environment and store in Express.
@@ -16,15 +18,22 @@ var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
 /**
- * Create HTTP server.
+ * Create HTTP/HTTPS server.
+ * Cloud platforms (Leapcell, Render, Railway, etc.) terminate TLS for us,
+ * so HTTP should be the default. HTTPS is still available for local use.
  */
+var useHttps = process.env.USE_HTTPS === 'true';
+var server;
 
-const fs = require('fs');
-const credentials = {
-  key: fs.readFileSync("selfsigned.key","utf8"),
-  cert: fs.readFileSync("selfsigned.crt","utf8")
-};
-var server = http.createServer(credentials, app);
+if (useHttps) {
+  var credentials = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH || 'selfsigned.key', 'utf8'),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH || 'selfsigned.crt', 'utf8')
+  };
+  server = https.createServer(credentials, app);
+} else {
+  server = http.createServer(app);
+}
 
 /**
  * Listen on provided port, on all network interfaces.
